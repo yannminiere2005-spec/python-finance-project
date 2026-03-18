@@ -32,10 +32,10 @@ try:
             # Sauvegarde avec intitulés et années
             df.to_csv(output_path, index=False, header=False, encoding='utf-8-sig')
             
-            print(f"✅ Terminé ! Le fichier '{output_path}' est prêt.")
-            print(f"📈 {len(df)} lignes extraites avec succès.")
+            print(f" Terminé ! Le fichier '{output_path}' est prêt.")
+            print(f" {len(df)} lignes extraites avec succès.")
         else:
-            print("❌ Aucun tableau trouvé. Vérifiez le PDF dans le dossier data.")
+            print(" Aucun tableau trouvé. Vérifiez le PDF dans le dossier data.")
 
 except Exception as e:
-    print(f"❌ Erreur : {e}")
+    print(f" Erreur : {e}")
