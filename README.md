@@ -24,5 +24,5 @@ Le programme intègre un algorithme de nettoyage de données capable de gérer l
 
 ## Limites de notre projet
 Bien que l'algorithme soit robuste face aux variations de nomenclature, il présente certaines limites liées à la structure des documents sources. En effet, le programme repose sur une lecture horizontale des données. Si le PDF présente des colonnes mal alignées, fusionnées ou une disposition verticale (années empilées dans une même cellule), l'extraction peut échouer.
-Notre code nécessite des documents au format "texte natif". Les scans d'états financiers (images PDF) ne sont pas supportés car ils nécessiteraient une couche d'OCR (Reconnaissance Optique de Caractères).
+Notre code nécessite des documents au format "texte natif". Les scans d'états financiers (images PDF) ne sont pas supportés.
 Une amélioration future pourrait être d'intégrer un système de "Fuzzy Matching" (correspondance approximative) plus poussé pour couvrir 100% des variantes de libellés comptables rencontrées dans les rapports internationaux.
