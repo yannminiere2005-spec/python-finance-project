@@ -4,30 +4,33 @@ import pdfplumber
 def extraire_donnees_pdf(pdf_file):
     try:
         with pdfplumber.open(pdf_file) as pdf:
-            all_tables = []
-            # On parcourt TOUTES les pages au lieu de juste la première
+            all_rows = []
             for page in pdf.pages:
-                tables = page.extract_tables(table_settings={
+                # extract_table est plus stable que extract_tables pour la fusion
+                table = page.extract_table(table_settings={
                     "vertical_strategy": "text", 
                     "horizontal_strategy": "text"
                 })
-                for t in tables:
-                    all_tables.append(pd.DataFrame(t))
+                if table:
+                    all_rows.extend(table)
             
-            if all_tables:
-                # On fusionne tout pour avoir accès au Bilan ET au Compte de Résultat
-                return pd.concat(all_tables, ignore_index=True).fillna("")
+            if all_rows:
+                # On crée le DataFrame à partir de toutes les lignes récupérées
+                df = pd.DataFrame(all_rows).fillna("")
+                return df
         return None
     except Exception as e:
         return None
 
-def trouver_colonne_annee(df, annee_cible):
-    """Cherche l'année dans tout le tableau nettoyé."""
-    annee_str = str(annee_cible).strip()
-    for r in range(len(df)):
-        for i, valeur in enumerate(df.iloc[r]):
-            val_nettoyee = str(valeur).replace('\n', '').replace(' ', '')
-            if annee_str in val_nettoyee:
+def trouver_colonne_annee(df, annee_recherchee):
+    annee_str = str(annee_recherchee)
+    
+    # On scanne les 5 premières lignes au cas où l'année est un peu plus bas
+    nb_lignes_a_scanner = min(5, len(df))
+    
+    for r in range(nb_lignes_a_scanner):
+        for i, val in enumerate(df.iloc[r]):
+            if annee_str in str(val):
                 return i
     return None
 
@@ -37,23 +40,24 @@ def obtenir_chiffre(df, mots_cles, col_index):
     
     for mot in mots_cles:
         for r in range(len(df)):
-            # On cherche le mot dans TOUTE la ligne (au cas où il y a un décalage de colonne)
+            # On cherche le mot dans toute la ligne pour plus de flexibilité
             ligne_complete = " ".join([str(val) for val in df.iloc[r]]).lower()
             
             if mot.lower() in ligne_complete:
-                val_brute = str(df.iloc[r, col_index])
-                # Nettoyage
-                val_propre = val_brute.replace('\n', '').replace(',', '').replace(' ', '').replace('-', '0')
-                
-                if '(' in val_propre:
-                    val_propre = '-' + val_propre.replace('(', '').replace(')', '')
-                
-                # Gestion du point comme séparateur de milliers (ex: 2.797 dans Hermès)
-                if '.' in val_propre and len(val_propre.split('.')[-1]) == 3:
-                    val_propre = val_propre.replace('.', '')
-
                 try:
+                    val_brute = str(df.iloc[r, col_index])
+                    # Nettoyage des caractères non numériques courants
+                    val_propre = val_brute.replace('\n', '').replace(',', '').replace(' ', '').replace('-', '0')
+                    
+                    # Gestion des parenthèses pour les chiffres négatifs
+                    if '(' in val_propre:
+                        val_propre = '-' + val_propre.replace('(', '').replace(')', '')
+                    
+                    # Gestion du point comme séparateur de milliers (spécifique Hermès)
+                    if '.' in val_propre and len(val_propre.split('.')[-1]) == 3:
+                        val_propre = val_propre.replace('.', '')
+
                     return float(val_propre)
-                except ValueError:
+                except (ValueError, IndexError):
                     continue
     return None
